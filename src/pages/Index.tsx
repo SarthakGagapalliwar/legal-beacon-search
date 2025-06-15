@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
@@ -146,7 +145,6 @@ const Index = () => {
                 <div key={caseData.id} className="animate-fade-in">
                   <CaseCard 
                     caseData={caseData} 
-                    onViewDetails={handleViewDetails}
                   />
                 </div>
               ))}
