@@ -65,6 +65,18 @@ const sampleCases = [
     summary: "Recent interpretation of Section 482 CrPC powers for quashing criminal proceedings in cases of abuse of process.",
     citations: ["2024 SCC OnLine SC 456"],
     status: "recent" as const
+  },
+  {
+    id: "5",
+    title: "Mohd. Ahmed Khan vs Shah Bano Begum",
+    court: "Supreme Court",
+    date: "1985-04-23",
+    jurisdiction: "Pan India", 
+    actName: "Criminal Procedure Code",
+    section: "Section 125",
+    summary: "Important precedent on maintenance rights under Section 125 CrPC that influenced subsequent family law decisions.",
+    citations: ["AIR 1985 SC 945", "(1985) 2 SCC 556"],
+    status: "precedent" as const
   }
 ];
 
