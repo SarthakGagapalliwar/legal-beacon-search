@@ -22,6 +22,29 @@ interface CaseSearchProps {
   initialQuery?: string;
 }
 
+const indianActs = [
+  "Criminal Code",
+  "Civil Code", 
+  "Constitution",
+  "Evidence Act",
+  "Contract Act",
+  "Motor Vehicle Act",
+  "Information Technology Act",
+  "Environment Protection Act",
+  "Indian Penal Code",
+  "Code of Criminal Procedure",
+  "Code of Civil Procedure",
+  "Indian Evidence Act",
+  "Indian Contract Act",
+  "Companies Act",
+  "Income Tax Act",
+  "Goods and Services Tax Act",
+  "Labour Laws",
+  "Property Laws",
+  "Family Laws",
+  "Consumer Protection Act"
+];
+
 const CaseSearch = ({ onSearch, initialQuery = "" }: CaseSearchProps) => {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({
@@ -95,12 +118,18 @@ const CaseSearch = ({ onSearch, initialQuery = "" }: CaseSearchProps) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="act-name">Act Name</Label>
-                <Input
-                  id="act-name"
-                  placeholder="e.g., Criminal Procedure Code"
-                  value={filters.actName}
-                  onChange={(e) => handleInputChange("actName", e.target.value)}
-                />
+                <Select value={filters.actName} onValueChange={(value) => handleInputChange("actName", value)}>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Select an act" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border shadow-lg max-h-60 z-50">
+                    {indianActs.map((act) => (
+                      <SelectItem key={act} value={act} className="hover:bg-gray-100">
+                        {act}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
