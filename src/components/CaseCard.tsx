@@ -4,13 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { CalendarDays, Building, Scale, FileText } from "lucide-react";
 import { type Case } from "@/hooks/useCases";
+import { useNavigate } from "react-router-dom";
 
 interface CaseCardProps {
   caseData: Case;
-  onViewDetails?: (caseId: string) => void;
 }
 
-const CaseCard = ({ caseData, onViewDetails }: CaseCardProps) => {
+const CaseCard = ({ caseData }: CaseCardProps) => {
+  const navigate = useNavigate();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "landmark":
@@ -43,6 +45,10 @@ const CaseCard = ({ caseData, onViewDetails }: CaseCardProps) => {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const handleViewDetails = () => {
+    navigate(`/case/${caseData.id}`);
   };
 
   return (
@@ -114,7 +120,7 @@ const CaseCard = ({ caseData, onViewDetails }: CaseCardProps) => {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => onViewDetails?.(caseData.id)}
+            onClick={handleViewDetails}
             className="hover:bg-legal-50 hover:border-legal-300"
           >
             View Details

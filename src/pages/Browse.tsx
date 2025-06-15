@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Header from "@/components/Header";
 import CaseCard from "@/components/CaseCard";
@@ -170,10 +169,7 @@ const Browse = () => {
             `}>
               {filteredCases.map((caseData) => (
                 <div key={caseData.id} className="animate-fade-in">
-                  <CaseCard 
-                    caseData={caseData} 
-                    onViewDetails={handleViewDetails}
-                  />
+                  <CaseCard caseData={caseData} />
                 </div>
               ))}
             </div>
