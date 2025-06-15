@@ -9,7 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      cases: {
+        Row: {
+          act_name: string | null
+          citations: string[] | null
+          court: string
+          created_at: string
+          date: string
+          full_text: string | null
+          id: string
+          jurisdiction: string | null
+          section: string | null
+          status: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          act_name?: string | null
+          citations?: string[] | null
+          court: string
+          created_at?: string
+          date: string
+          full_text?: string | null
+          id?: string
+          jurisdiction?: string | null
+          section?: string | null
+          status?: string | null
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          act_name?: string | null
+          citations?: string[] | null
+          court?: string
+          created_at?: string
+          date?: string
+          full_text?: string | null
+          id?: string
+          jurisdiction?: string | null
+          section?: string | null
+          status?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -7,32 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-
-interface SearchFilters {
-  query: string;
-  actName: string;
-  section: string;
-  court: string;
-  year: string;
-  jurisdiction: string;
-}
-
-interface CaseSearchProps {
-  onSearch: (filters: SearchFilters) => void;
-  initialQuery?: string;
-}
+import { type SearchFilters } from "@/hooks/useCases";
 
 const indianActs = [
   "Criminal Code",
   "Civil Code", 
-  "Constitution",
+  "Constitution of India",
   "Evidence Act",
   "Contract Act",
   "Motor Vehicle Act",
   "Information Technology Act",
   "Environment Protection Act",
   "Indian Penal Code",
-  "Code of Criminal Procedure",
+  "Criminal Procedure Code",
   "Code of Civil Procedure",
   "Indian Evidence Act",
   "Indian Contract Act",
@@ -44,6 +31,11 @@ const indianActs = [
   "Family Laws",
   "Consumer Protection Act"
 ];
+
+interface CaseSearchProps {
+  onSearch: (filters: SearchFilters) => void;
+  initialQuery?: string;
+}
 
 const CaseSearch = ({ onSearch, initialQuery = "" }: CaseSearchProps) => {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
@@ -61,18 +53,21 @@ const CaseSearch = ({ onSearch, initialQuery = "" }: CaseSearchProps) => {
   };
 
   const handleSearch = () => {
+    console.log('Searching with filters:', filters);
     onSearch(filters);
   };
 
   const handleReset = () => {
-    setFilters({
+    const resetFilters = {
       query: "",
       actName: "",
       section: "",
       court: "",
       year: "",
       jurisdiction: "",
-    });
+    };
+    setFilters(resetFilters);
+    onSearch(resetFilters);
   };
 
   return (
@@ -149,11 +144,11 @@ const CaseSearch = ({ onSearch, initialQuery = "" }: CaseSearchProps) => {
                     <SelectValue placeholder="Select court" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="supreme-court">Supreme Court</SelectItem>
-                    <SelectItem value="high-court">High Court</SelectItem>
-                    <SelectItem value="district-court">District Court</SelectItem>
-                    <SelectItem value="sessions-court">Sessions Court</SelectItem>
-                    <SelectItem value="magistrate-court">Magistrate Court</SelectItem>
+                    <SelectItem value="Supreme Court">Supreme Court</SelectItem>
+                    <SelectItem value="High Court">High Court</SelectItem>
+                    <SelectItem value="District Court">District Court</SelectItem>
+                    <SelectItem value="Sessions Court">Sessions Court</SelectItem>
+                    <SelectItem value="Magistrate Court">Magistrate Court</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -176,12 +171,12 @@ const CaseSearch = ({ onSearch, initialQuery = "" }: CaseSearchProps) => {
                     <SelectValue placeholder="Select jurisdiction" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pan-india">Pan India</SelectItem>
-                    <SelectItem value="delhi">Delhi</SelectItem>
-                    <SelectItem value="mumbai">Mumbai</SelectItem>
-                    <SelectItem value="bangalore">Bangalore</SelectItem>
-                    <SelectItem value="chennai">Chennai</SelectItem>
-                    <SelectItem value="kolkata">Kolkata</SelectItem>
+                    <SelectItem value="Pan India">Pan India</SelectItem>
+                    <SelectItem value="Delhi">Delhi</SelectItem>
+                    <SelectItem value="Mumbai">Mumbai</SelectItem>
+                    <SelectItem value="Bangalore">Bangalore</SelectItem>
+                    <SelectItem value="Chennai">Chennai</SelectItem>
+                    <SelectItem value="Kolkata">Kolkata</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

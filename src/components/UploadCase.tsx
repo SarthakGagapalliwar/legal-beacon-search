@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Upload, FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,10 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useCreateCase, type CaseFormData } from "@/hooks/useCases";
 
 const UploadCase = () => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
+  const createCaseMutation = useCreateCase();
+  
+  const [formData, setFormData] = useState<CaseFormData>({
     title: "",
     court: "",
     date: "",
@@ -26,7 +28,7 @@ const UploadCase = () => {
 
   const [dragActive, setDragActive] = useState(false);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof CaseFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -74,7 +76,7 @@ const UploadCase = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate required fields
@@ -87,24 +89,26 @@ const UploadCase = () => {
       return;
     }
 
-    toast({
-      title: "Case uploaded successfully",
-      description: "The case has been added to the database and will be available for search.",
-    });
-
-    // Reset form
-    setFormData({
-      title: "",
-      court: "",
-      date: "",
-      jurisdiction: "",
-      actName: "",
-      section: "",
-      summary: "",
-      fullText: "",
-      citations: "",
-      status: ""
-    });
+    try {
+      await createCaseMutation.mutateAsync(formData);
+      
+      // Reset form on success
+      setFormData({
+        title: "",
+        court: "",
+        date: "",
+        jurisdiction: "",
+        actName: "",
+        section: "",
+        summary: "",
+        fullText: "",
+        citations: "",
+        status: ""
+      });
+    } catch (error) {
+      // Error is handled by the mutation
+      console.error('Submit error:', error);
+    }
   };
 
   return (
@@ -181,11 +185,11 @@ const UploadCase = () => {
                     <SelectValue placeholder="Select court" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="supreme-court">Supreme Court</SelectItem>
-                    <SelectItem value="high-court">High Court</SelectItem>
-                    <SelectItem value="district-court">District Court</SelectItem>
-                    <SelectItem value="sessions-court">Sessions Court</SelectItem>
-                    <SelectItem value="magistrate-court">Magistrate Court</SelectItem>
+                    <SelectItem value="Supreme Court">Supreme Court</SelectItem>
+                    <SelectItem value="High Court">High Court</SelectItem>
+                    <SelectItem value="District Court">District Court</SelectItem>
+                    <SelectItem value="Sessions Court">Sessions Court</SelectItem>
+                    <SelectItem value="Magistrate Court">Magistrate Court</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -208,12 +212,12 @@ const UploadCase = () => {
                     <SelectValue placeholder="Select jurisdiction" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pan-india">Pan India</SelectItem>
-                    <SelectItem value="delhi">Delhi</SelectItem>
-                    <SelectItem value="mumbai">Mumbai</SelectItem>
-                    <SelectItem value="bangalore">Bangalore</SelectItem>
-                    <SelectItem value="chennai">Chennai</SelectItem>
-                    <SelectItem value="kolkata">Kolkata</SelectItem>
+                    <SelectItem value="Pan India">Pan India</SelectItem>
+                    <SelectItem value="Delhi">Delhi</SelectItem>
+                    <SelectItem value="Mumbai">Mumbai</SelectItem>
+                    <SelectItem value="Bangalore">Bangalore</SelectItem>
+                    <SelectItem value="Chennai">Chennai</SelectItem>
+                    <SelectItem value="Kolkata">Kolkata</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -289,8 +293,9 @@ const UploadCase = () => {
               <Button 
                 type="submit"
                 className="bg-legal-600 hover:bg-legal-700"
+                disabled={createCaseMutation.isPending}
               >
-                Upload Case
+                {createCaseMutation.isPending ? "Uploading..." : "Upload Case"}
               </Button>
               <Button 
                 type="button"

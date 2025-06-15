@@ -3,19 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, Building, Scale, FileText } from "lucide-react";
-
-interface Case {
-  id: string;
-  title: string;
-  court: string;
-  date: string;
-  jurisdiction: string;
-  actName: string;
-  section: string;
-  summary: string;
-  citations: string[];
-  status: "landmark" | "recent" | "precedent";
-}
+import { type Case } from "@/hooks/useCases";
 
 interface CaseCardProps {
   caseData: Case;
@@ -49,6 +37,14 @@ const CaseCard = ({ caseData, onViewDetails }: CaseCardProps) => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
     <Card className="case-card-hover border-l-4 border-l-legal-500 bg-white">
       <CardHeader className="pb-3">
@@ -78,34 +74,42 @@ const CaseCard = ({ caseData, onViewDetails }: CaseCardProps) => {
           <div className="flex items-center space-x-2">
             <CalendarDays className="w-4 h-4 text-legal-600" />
             <span className="font-medium text-muted-foreground">Date:</span>
-            <span className="text-foreground">{caseData.date}</span>
+            <span className="text-foreground">{formatDate(caseData.date)}</span>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <Scale className="w-4 h-4 text-legal-600" />
-            <span className="font-medium text-muted-foreground">Act:</span>
-            <span className="text-foreground">{caseData.actName}</span>
-          </div>
+          {caseData.act_name && (
+            <div className="flex items-center space-x-2">
+              <Scale className="w-4 h-4 text-legal-600" />
+              <span className="font-medium text-muted-foreground">Act:</span>
+              <span className="text-foreground">{caseData.act_name}</span>
+            </div>
+          )}
           
-          <div className="flex items-center space-x-2">
-            <FileText className="w-4 h-4 text-legal-600" />
-            <span className="font-medium text-muted-foreground">Section:</span>
-            <span className="text-foreground">{caseData.section}</span>
-          </div>
+          {caseData.section && (
+            <div className="flex items-center space-x-2">
+              <FileText className="w-4 h-4 text-legal-600" />
+              <span className="font-medium text-muted-foreground">Section:</span>
+              <span className="text-foreground">{caseData.section}</span>
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-wrap gap-1">
-          {caseData.citations.map((citation, index) => (
-            <Badge key={index} variant="outline" className="text-xs">
-              {citation}
-            </Badge>
-          ))}
-        </div>
+        {caseData.citations && caseData.citations.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {caseData.citations.map((citation, index) => (
+              <Badge key={index} variant="outline" className="text-xs">
+                {citation}
+              </Badge>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center justify-between pt-2">
-          <Badge variant="secondary" className="text-xs">
-            {caseData.jurisdiction}
-          </Badge>
+          {caseData.jurisdiction && (
+            <Badge variant="secondary" className="text-xs">
+              {caseData.jurisdiction}
+            </Badge>
+          )}
           
           <Button
             size="sm"
