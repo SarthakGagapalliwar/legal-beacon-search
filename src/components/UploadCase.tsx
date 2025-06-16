@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Upload, FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateCase, type CaseFormData } from "@/hooks/useCases";
+import { useAuth } from "@/hooks/useAuth";
 
 const UploadCase = () => {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const createCaseMutation = useCreateCase();
   
   const [formData, setFormData] = useState<CaseFormData>({
@@ -27,6 +30,22 @@ const UploadCase = () => {
   });
 
   const [dragActive, setDragActive] = useState(false);
+
+  // Redirect if not admin
+  if (!isAdmin) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-center text-red-600">Access Denied</CardTitle>
+            <CardDescription className="text-center">
+              You need admin privileges to upload cases.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   const handleInputChange = (field: keyof CaseFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -117,10 +136,10 @@ const UploadCase = () => {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Plus className="w-5 h-5 text-legal-600" />
-            <span>Upload New Case</span>
+            <span>Upload New Case (Admin Only)</span>
           </CardTitle>
           <CardDescription>
-            Add a new legal case to the database. Fill in the details below.
+            Add a new legal case to the database. Only admins can upload cases.
           </CardDescription>
         </CardHeader>
         <CardContent>

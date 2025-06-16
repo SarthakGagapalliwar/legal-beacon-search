@@ -1,72 +1,150 @@
 
-import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Scale, Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import AdminHeader from "@/components/AdminHeader";
 
 const Header = () => {
-  const [quickSearch, setQuickSearch] = useState("");
-  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+  const { user, isAdmin } = useAuth();
 
-  const handleQuickSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (quickSearch.trim()) {
-      navigate(`/?search=${encodeURIComponent(quickSearch)}`);
-    }
-  };
+  const isActive = (path: string) => location.pathname === path;
+
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-slate-200">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center space-x-8">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-legal-600 to-legal-800 rounded-md flex items-center justify-center">
-              <span className="text-white font-bold text-sm">⚖</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-xl legal-text-gradient">LegalSearch</span>
-              <span className="text-xs text-muted-foreground">Case Law Database</span>
-            </div>
+            <Scale className="w-8 h-8 text-legal-600" />
+            <span className="text-xl font-bold text-slate-800">LegalDB</span>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="text-sm font-medium hover:text-legal-600 transition-colors">
-              Search
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link
+              to="/"
+              className={`text-sm font-medium transition-colors hover:text-legal-600 ${
+                isActive("/") ? "text-legal-600" : "text-slate-600"
+              }`}
+            >
+              Home
             </Link>
-            <Link to="/browse" className="text-sm font-medium hover:text-legal-600 transition-colors">
+            <Link
+              to="/browse"
+              className={`text-sm font-medium transition-colors hover:text-legal-600 ${
+                isActive("/browse") ? "text-legal-600" : "text-slate-600"
+              }`}
+            >
               Browse Cases
             </Link>
-            <Link to="/upload" className="text-sm font-medium hover:text-legal-600 transition-colors">
-              Upload Case
-            </Link>
-            <Link to="/about" className="text-sm font-medium hover:text-legal-600 transition-colors">
+            {isAdmin && (
+              <Link
+                to="/upload"
+                className={`text-sm font-medium transition-colors hover:text-legal-600 ${
+                  isActive("/upload") ? "text-legal-600" : "text-slate-600"
+                }`}
+              >
+                Upload Case
+              </Link>
+            )}
+            <Link
+              to="/about"
+              className={`text-sm font-medium transition-colors hover:text-legal-600 ${
+                isActive("/about") ? "text-legal-600" : "text-slate-600"
+              }`}
+            >
               About
             </Link>
           </nav>
-        </div>
 
-        <div className="flex items-center space-x-4">
-          <form onSubmit={handleQuickSearch} className="hidden sm:flex items-center space-x-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Quick search..."
-                value={quickSearch}
-                onChange={(e) => setQuickSearch(e.target.value)}
-                className="pl-10 w-64"
-              />
-            </div>
-          </form>
-          
-          <Button 
-            variant="default" 
+          {/* Desktop Auth */}
+          <div className="hidden md:flex items-center space-x-4">
+            {user ? (
+              <AdminHeader />
+            ) : (
+              <Link to="/auth">
+                <Button className="bg-legal-600 hover:bg-legal-700">
+                  Admin Sign In
+                </Button>
+              </Link>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <Button
+            variant="ghost"
             size="sm"
-            className="bg-gradient-to-r from-legal-600 to-legal-700 hover:from-legal-700 hover:to-legal-800"
+            onClick={toggleMenu}
+            className="md:hidden"
           >
-            Sign In
+            {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
         </div>
+
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden py-4 border-t border-gray-200">
+            <nav className="flex flex-col space-y-4">
+              <Link
+                to="/"
+                className={`text-sm font-medium transition-colors hover:text-legal-600 ${
+                  isActive("/") ? "text-legal-600" : "text-slate-600"
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Home
+              </Link>
+              <Link
+                to="/browse"
+                className={`text-sm font-medium transition-colors hover:text-legal-600 ${
+                  isActive("/browse") ? "text-legal-600" : "text-slate-600"
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Browse Cases
+              </Link>
+              {isAdmin && (
+                <Link
+                  to="/upload"
+                  className={`text-sm font-medium transition-colors hover:text-legal-600 ${
+                    isActive("/upload") ? "text-legal-600" : "text-slate-600"
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Upload Case
+                </Link>
+              )}
+              <Link
+                to="/about"
+                className={`text-sm font-medium transition-colors hover:text-legal-600 ${
+                  isActive("/about") ? "text-legal-600" : "text-slate-600"
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                About
+              </Link>
+              
+              {/* Mobile Auth */}
+              <div className="pt-4 border-t border-gray-200">
+                {user ? (
+                  <AdminHeader />
+                ) : (
+                  <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                    <Button className="bg-legal-600 hover:bg-legal-700">
+                      Admin Sign In
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
