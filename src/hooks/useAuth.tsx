@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -34,6 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -48,6 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const checkAdminRole = async (userId: string) => {
+    console.log('Checking admin role for user:', userId);
     try {
       const { data, error } = await supabase
         .from('user_roles')
@@ -56,7 +59,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('role', 'admin')
         .single();
       
-      setIsAdmin(!!data && !error);
+      console.log('Admin role check result:', { data, error });
+      const hasAdminRole = !!data && !error;
+      setIsAdmin(hasAdminRole);
+      console.log('Is admin:', hasAdminRole);
     } catch (error) {
       console.error('Error checking admin role:', error);
       setIsAdmin(false);
@@ -70,8 +76,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (data.user && !error) {
+      console.log('New user signed up, assigning admin role:', data.user.id);
       // Assign admin role to new user
-      await supabase
+      const { error: roleError } = await supabase
         .from('user_roles')
         .insert([
           {
@@ -79,6 +86,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             role: 'admin'
           }
         ]);
+      
+      if (roleError) {
+        console.error('Error assigning admin role:', roleError);
+      } else {
+        console.log('Admin role assigned successfully');
+      }
     }
 
     return { data, error };

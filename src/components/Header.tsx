@@ -11,6 +11,10 @@ const Header = () => {
   const location = useLocation();
   const { user, isAdmin } = useAuth();
 
+  // Debug logging
+  console.log('Header - User:', user?.email);
+  console.log('Header - IsAdmin:', isAdmin);
+
   const isActive = (path: string) => location.pathname === path;
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
