@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Calendar, Building, Scale, FileText, MapPin, Tag, Eye } from "lucide-react";
+import { ArrowLeft, Download, Calendar, Building, Scale, FileText, MapPin, Tag, Eye, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import Header from "@/components/Header";
 import { useCases } from "@/hooks/useCases";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -56,6 +57,53 @@ const CaseDetail = () => {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const getFileUrl = (filePath: string) => {
+    const { data } = supabase.storage
+      .from('case-documents')
+      .getPublicUrl(filePath);
+    return data.publicUrl;
+  };
+
+  const handleViewDocument = () => {
+    if (!caseData?.file_path) return;
+    
+    const fileUrl = getFileUrl(caseData.file_path);
+    window.open(fileUrl, '_blank');
+  };
+
+  const handleDownloadDocument = async () => {
+    if (!caseData?.file_path) return;
+    
+    try {
+      const { data, error } = await supabase.storage
+        .from('case-documents')
+        .download(caseData.file_path);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = caseData.file_name || 'case-document';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download started",
+        description: "Case document has been downloaded successfully.",
+      });
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        title: "Download failed",
+        description: "There was an error downloading the file.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDownloadPDF = () => {
@@ -185,7 +233,7 @@ Generated on: ${new Date().toLocaleDateString('en-IN')}
       
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Header with Back Button and Download Options */}
+          {/* Header with Back Button and Actions */}
           <div className="flex items-center justify-between">
             <Button 
               onClick={() => navigate('/browse')} 
@@ -224,14 +272,37 @@ Generated on: ${new Date().toLocaleDateString('en-IN')}
                 </Dialog>
               )}
 
-              {/* Download Options */}
+              {/* Original Document Actions */}
+              {caseData.file_path && (
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    onClick={handleViewDocument}
+                    variant="outline"
+                    className="flex items-center space-x-2"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>View Original Document</span>
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleDownloadDocument}
+                    variant="outline"
+                    className="flex items-center space-x-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Original</span>
+                  </Button>
+                </div>
+              )}
+
+              {/* Export Options */}
               <div className="flex items-center space-x-2">
                 <Button 
                   onClick={handleDownloadPDF}
                   className="bg-legal-600 hover:bg-legal-700 flex items-center space-x-2"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download TXT</span>
+                  <span>Export TXT</span>
                 </Button>
                 
                 <Button 
@@ -275,6 +346,52 @@ Generated on: ${new Date().toLocaleDateString('en-IN')}
               </div>
             </CardHeader>
           </Card>
+
+          {/* Original Document Information */}
+          {caseData.file_path && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center space-x-2">
+                  <FileText className="w-5 h-5 text-legal-600" />
+                  <span>Original Document</span>
+                </CardTitle>
+                <CardDescription>
+                  View or download the original document uploaded by the admin
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="w-8 h-8 text-legal-600" />
+                    <div>
+                      <p className="font-medium">{caseData.file_name || 'Case Document'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {caseData.file_type === 'application/pdf' ? 'PDF Document' : 'Text Document'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={handleViewDocument}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      View
+                    </Button>
+                    <Button 
+                      onClick={handleDownloadDocument}
+                      size="sm"
+                      className="bg-legal-600 hover:bg-legal-700"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Legal Details */}
           {(caseData.act_name || caseData.section) && (

@@ -16,6 +16,9 @@ export type Database = {
           court: string
           created_at: string
           date: string
+          file_name: string | null
+          file_path: string | null
+          file_type: string | null
           full_text: string | null
           id: string
           jurisdiction: string | null
@@ -31,6 +34,9 @@ export type Database = {
           court: string
           created_at?: string
           date: string
+          file_name?: string | null
+          file_path?: string | null
+          file_type?: string | null
           full_text?: string | null
           id?: string
           jurisdiction?: string | null
@@ -46,6 +52,9 @@ export type Database = {
           court?: string
           created_at?: string
           date?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_type?: string | null
           full_text?: string | null
           id?: string
           jurisdiction?: string | null

@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useCreateCase, type CaseFormData } from "@/hooks/useCases";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const UploadCase = () => {
   const { toast } = useToast();
@@ -30,6 +31,8 @@ const UploadCase = () => {
   });
 
   const [dragActive, setDragActive] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Redirect if not admin
   if (!isAdmin) {
@@ -72,20 +75,41 @@ const UploadCase = () => {
     }
   };
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     if (file.type === "application/pdf" || file.type === "text/plain") {
-      toast({
-        title: "File uploaded successfully",
-        description: `${file.name} has been processed and content extracted.`,
-      });
+      setIsUploading(true);
+      setUploadedFile(file);
       
-      // Simulate extracting content from PDF/text file
-      setTimeout(() => {
-        setFormData(prev => ({
-          ...prev,
-          fullText: `[Extracted content from ${file.name}]\n\nThis is where the actual case content would appear after OCR/text extraction...`
-        }));
-      }, 1000);
+      try {
+        // Extract text content for display
+        if (file.type === "text/plain") {
+          const text = await file.text();
+          setFormData(prev => ({
+            ...prev,
+            fullText: text
+          }));
+        } else {
+          // For PDF files, we'll just note that it's been uploaded
+          setFormData(prev => ({
+            ...prev,
+            fullText: `[PDF Document uploaded: ${file.name}]\n\nThe PDF content will be available for viewing after the case is saved.`
+          }));
+        }
+
+        toast({
+          title: "File uploaded successfully",
+          description: `${file.name} has been processed and is ready to be saved with the case.`,
+        });
+      } catch (error) {
+        console.error('Error processing file:', error);
+        toast({
+          title: "Error processing file",
+          description: "There was an error processing the uploaded file.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsUploading(false);
+      }
     } else {
       toast({
         title: "Invalid file type",
@@ -93,6 +117,23 @@ const UploadCase = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const uploadFileToStorage = async (file: File, caseId: string) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${caseId}-${Date.now()}.${fileExt}`;
+    const filePath = `${caseId}/${fileName}`;
+
+    const { error } = await supabase.storage
+      .from('case-documents')
+      .upload(filePath, file);
+
+    if (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
+
+    return { filePath, fileName };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -109,7 +150,41 @@ const UploadCase = () => {
     }
 
     try {
-      await createCaseMutation.mutateAsync(formData);
+      // Create the case first to get the ID
+      const newCase = await createCaseMutation.mutateAsync(formData);
+      
+      // If there's an uploaded file, upload it to storage and update the case
+      if (uploadedFile && newCase) {
+        try {
+          const { filePath, fileName } = await uploadFileToStorage(uploadedFile, newCase.id);
+          
+          // Update the case with file information
+          const { error: updateError } = await supabase
+            .from('cases')
+            .update({
+              file_path: filePath,
+              file_name: fileName,
+              file_type: uploadedFile.type
+            })
+            .eq('id', newCase.id);
+
+          if (updateError) {
+            console.error('Error updating case with file info:', updateError);
+            toast({
+              title: "Warning",
+              description: "Case created but file upload failed. You can try uploading the file again.",
+              variant: "destructive"
+            });
+          }
+        } catch (fileError) {
+          console.error('Error uploading file:', fileError);
+          toast({
+            title: "Warning", 
+            description: "Case created but file upload failed. You can try uploading the file again.",
+            variant: "destructive"
+          });
+        }
+      }
       
       // Reset form on success
       setFormData({
@@ -124,6 +199,8 @@ const UploadCase = () => {
         citations: "",
         status: ""
       });
+      setUploadedFile(null);
+      
     } catch (error) {
       // Error is handled by the mutation
       console.error('Submit error:', error);
@@ -139,7 +216,7 @@ const UploadCase = () => {
             <span>Upload New Case (Admin Only)</span>
           </CardTitle>
           <CardDescription>
-            Add a new legal case to the database. Only admins can upload cases.
+            Add a new legal case to the database. Upload PDF or text files for easy access.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -165,14 +242,22 @@ const UploadCase = () => {
                 <p className="text-sm text-gray-500 mt-1">
                   or click to browse (PDF, TXT files supported)
                 </p>
+                {uploadedFile && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800">
+                      ✓ {uploadedFile.name} ready to upload
+                    </p>
+                  </div>
+                )}
                 <Button
                   type="button"
                   variant="outline"
                   className="mt-4"
+                  disabled={isUploading}
                   onClick={() => document.getElementById('file-upload')?.click()}
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  Choose File
+                  {isUploading ? "Processing..." : "Choose File"}
                 </Button>
                 <input
                   id="file-upload"
@@ -319,18 +404,21 @@ const UploadCase = () => {
               <Button 
                 type="button"
                 variant="outline"
-                onClick={() => setFormData({
-                  title: "",
-                  court: "",
-                  date: "",
-                  jurisdiction: "",
-                  actName: "",
-                  section: "",
-                  summary: "",
-                  fullText: "",
-                  citations: "",
-                  status: ""
-                })}
+                onClick={() => {
+                  setFormData({
+                    title: "",
+                    court: "",
+                    date: "",
+                    jurisdiction: "",
+                    actName: "",
+                    section: "",
+                    summary: "",
+                    fullText: "",
+                    citations: "",
+                    status: ""
+                  });
+                  setUploadedFile(null);
+                }}
               >
                 Reset Form
               </Button>
