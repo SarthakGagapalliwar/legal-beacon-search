@@ -1,6 +1,5 @@
-
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Calendar, Building, Scale, FileText, MapPin, Tag } from "lucide-react";
+import { ArrowLeft, Download, Calendar, Building, Scale, FileText, MapPin, Tag, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +7,14 @@ import { Separator } from "@/components/ui/separator";
 import Header from "@/components/Header";
 import { useCases } from "@/hooks/useCases";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const CaseDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -54,7 +61,6 @@ const CaseDetail = () => {
   const handleDownloadPDF = () => {
     if (!caseData) return;
     
-    // Create a simple PDF-like content for download
     const content = `
 CASE DETAILS
 ============
@@ -101,6 +107,45 @@ Generated on: ${new Date().toLocaleDateString('en-IN')}
     });
   };
 
+  const handleDownloadJSON = () => {
+    if (!caseData) return;
+    
+    const jsonData = {
+      case_details: {
+        id: caseData.id,
+        title: caseData.title,
+        court: caseData.court,
+        date: caseData.date,
+        jurisdiction: caseData.jurisdiction,
+        act_name: caseData.act_name,
+        section: caseData.section,
+        status: caseData.status,
+        summary: caseData.summary,
+        full_text: caseData.full_text,
+        citations: caseData.citations,
+        created_at: caseData.created_at,
+        updated_at: caseData.updated_at
+      },
+      exported_on: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `${caseData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+
+    toast({
+      title: "JSON Export completed",
+      description: "Case data has been exported as JSON file.",
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -140,7 +185,7 @@ Generated on: ${new Date().toLocaleDateString('en-IN')}
       
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Header with Back Button */}
+          {/* Header with Back Button and Download Options */}
           <div className="flex items-center justify-between">
             <Button 
               onClick={() => navigate('/browse')} 
@@ -151,13 +196,54 @@ Generated on: ${new Date().toLocaleDateString('en-IN')}
               <span>Back to Browse</span>
             </Button>
             
-            <Button 
-              onClick={handleDownloadPDF}
-              className="bg-legal-600 hover:bg-legal-700 flex items-center space-x-2"
-            >
-              <Download className="w-4 h-4" />
-              <span>Download Case</span>
-            </Button>
+            <div className="flex items-center space-x-3">
+              {/* View Full Text Dialog */}
+              {caseData.full_text && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="flex items-center space-x-2">
+                      <Eye className="w-4 h-4" />
+                      <span>View Full Text</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="text-xl">{caseData.title}</DialogTitle>
+                      <DialogDescription>
+                        Complete case text - {caseData.court} | {formatDate(caseData.date)}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-4">
+                      <div className="bg-slate-50 rounded-lg p-6 border max-h-96 overflow-y-auto">
+                        <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground font-mono">
+                          {caseData.full_text}
+                        </pre>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+
+              {/* Download Options */}
+              <div className="flex items-center space-x-2">
+                <Button 
+                  onClick={handleDownloadPDF}
+                  className="bg-legal-600 hover:bg-legal-700 flex items-center space-x-2"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download TXT</span>
+                </Button>
+                
+                <Button 
+                  onClick={handleDownloadJSON}
+                  variant="outline"
+                  className="flex items-center space-x-2"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Export JSON</span>
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* Case Title and Status */}
@@ -249,7 +335,7 @@ Generated on: ${new Date().toLocaleDateString('en-IN')}
             </Card>
           )}
 
-          {/* Full Text */}
+          {/* Full Text Preview */}
           {caseData.full_text && (
             <Card>
               <CardHeader>
@@ -258,14 +344,46 @@ Generated on: ${new Date().toLocaleDateString('en-IN')}
                   <span>Full Case Text</span>
                 </CardTitle>
                 <CardDescription>
-                  Complete text of the legal case
+                  Preview of the complete case text (click "View Full Text" above to see the complete document)
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="bg-slate-50 rounded-lg p-6 border">
-                  <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground font-mono">
-                    {caseData.full_text}
-                  </pre>
+                  <div className="max-h-40 overflow-hidden relative">
+                    <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground font-mono">
+                      {caseData.full_text.substring(0, 500)}
+                      {caseData.full_text.length > 500 && '...'}
+                    </pre>
+                    {caseData.full_text.length > 500 && (
+                      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-50 to-transparent"></div>
+                    )}
+                  </div>
+                  {caseData.full_text.length > 500 && (
+                    <div className="mt-3 text-center">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="link" className="text-legal-600">
+                            Click to view complete text
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="text-xl">{caseData.title}</DialogTitle>
+                            <DialogDescription>
+                              Complete case text - {caseData.court} | {formatDate(caseData.date)}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="mt-4">
+                            <div className="bg-slate-50 rounded-lg p-6 border max-h-96 overflow-y-auto">
+                              <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground font-mono">
+                                {caseData.full_text}
+                              </pre>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
