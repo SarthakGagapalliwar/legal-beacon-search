@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Header from "@/components/Header";
+import EditCase from "@/components/EditCase";
 import { useCases } from "@/hooks/useCases";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -21,6 +23,7 @@ const CaseDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const { data: cases = [], isLoading } = useCases();
   
   const caseData = cases.find(c => c.id === id);
@@ -245,6 +248,9 @@ Generated on: ${new Date().toLocaleDateString('en-IN')}
             </Button>
             
             <div className="flex items-center space-x-3">
+              {/* Admin Edit Button */}
+              {isAdmin && <EditCase caseData={caseData} />}
+
               {/* View Full Text Dialog */}
               {caseData.full_text && (
                 <Dialog>

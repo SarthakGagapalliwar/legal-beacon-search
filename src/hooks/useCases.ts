@@ -148,3 +148,59 @@ export const useCreateCase = () => {
     },
   });
 };
+
+export const useUpdateCase = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, caseData }: { id: string; caseData: CaseFormData }) => {
+      console.log('Updating case:', id, caseData);
+      
+      const citationsArray = caseData.citations
+        ? caseData.citations.split(',').map(c => c.trim()).filter(c => c)
+        : [];
+
+      const { data, error } = await supabase
+        .from('cases')
+        .update({
+          title: caseData.title,
+          court: caseData.court,
+          date: caseData.date,
+          jurisdiction: caseData.jurisdiction || null,
+          act_name: caseData.actName || null,
+          section: caseData.section || null,
+          summary: caseData.summary || null,
+          full_text: caseData.fullText || null,
+          citations: citationsArray.length > 0 ? citationsArray : null,
+          status: (caseData.status as 'landmark' | 'recent' | 'precedent') || 'recent'
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating case:', error);
+        throw error;
+      }
+
+      console.log('Updated case:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cases'] });
+      toast({
+        title: "Case updated successfully",
+        description: "The case has been updated in the database.",
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to update case:', error);
+      toast({
+        title: "Failed to update case",
+        description: "There was an error updating the case. Please try again.",
+        variant: "destructive"
+      });
+    },
+  });
+};
